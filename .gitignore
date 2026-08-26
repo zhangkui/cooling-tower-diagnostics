@@ -1,0 +1,11 @@
+.runtime-data/
+.runtime-http-verify/
+*.db
+*.db-shm
+*.db-wal
+*.tmp
+_docker/
+metadata/
+cases/
+*.pyc
+__pycache__/
