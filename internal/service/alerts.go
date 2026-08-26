@@ -39,7 +39,7 @@ func (m AlertManager) EscalateDue(ctx context.Context, now time.Time, after time
 	}
 	count := 0
 	for _, item := range items {
-		if item.State == model.AlertAcknowledged && alert.Due(item, now, alert.EscalationPolicy{After: after}) {
+		if item.State == model.AlertOpen && alert.Due(item, now, alert.EscalationPolicy{After: after}) {
 			if err := alert.Escalate(&item, now); err != nil {
 				continue
 			}
