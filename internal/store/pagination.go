@@ -3,7 +3,9 @@ package store
 import (
 	"context"
 	"cooling-tower-diagnostics/internal/model"
+	"database/sql"
 	"fmt"
+	"time"
 )
 
 type PaginationStore struct{ DB *DB }
@@ -54,9 +56,20 @@ func (s PaginationStore) Alerts(ctx context.Context, page, size int) (model.Page
 	items := []model.Alert{}
 	for rows.Next() {
 		var a model.Alert
-		var opened, updated, ack, closed string
+		var opened, updated string
+		var ack, closed sql.NullString
 		if e := rows.Scan(&a.ID, &a.TowerID, &a.Rule, &a.Severity, &a.State, &a.Message, &opened, &updated, &ack, &closed); e != nil {
 			return model.Page{}, e
+		}
+		a.OpenedAt, _ = time.Parse(time.RFC3339Nano, opened)
+		a.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updated)
+		if ack.Valid && ack.String != "" {
+			x, _ := time.Parse(time.RFC3339Nano, ack.String)
+			a.AcknowledgedAt = &x
+		}
+		if closed.Valid && closed.String != "" {
+			x, _ := time.Parse(time.RFC3339Nano, closed.String)
+			a.ClosedAt = &x
 		}
 		items = append(items, a)
 	}

@@ -22,7 +22,8 @@ func nullableTime(v *time.Time) any {
 }
 func (s AlertStore) Get(ctx context.Context, id string) (model.Alert, error) {
 	var a model.Alert
-	var o, u, ack, cl string
+	var o, u string
+	var ack, cl sql.NullString
 	e := s.DB.SQL.QueryRowContext(ctx, `SELECT id,tower_id,rule,severity,state,message,opened_at,updated_at,acknowledged_at,closed_at FROM alerts WHERE id=?`, id).Scan(&a.ID, &a.TowerID, &a.Rule, &a.Severity, &a.State, &a.Message, &o, &u, &ack, &cl)
 	if e != nil {
 		if errors.Is(e, sql.ErrNoRows) {
@@ -32,12 +33,12 @@ func (s AlertStore) Get(ctx context.Context, id string) (model.Alert, error) {
 	}
 	a.OpenedAt, _ = time.Parse(time.RFC3339Nano, o)
 	a.UpdatedAt, _ = time.Parse(time.RFC3339Nano, u)
-	if ack != "" {
-		x, _ := time.Parse(time.RFC3339Nano, ack)
+	if ack.Valid && ack.String != "" {
+		x, _ := time.Parse(time.RFC3339Nano, ack.String)
 		a.AcknowledgedAt = &x
 	}
-	if cl != "" {
-		x, _ := time.Parse(time.RFC3339Nano, cl)
+	if cl.Valid && cl.String != "" {
+		x, _ := time.Parse(time.RFC3339Nano, cl.String)
 		a.ClosedAt = &x
 	}
 	return a, nil
