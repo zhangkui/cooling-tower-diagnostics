@@ -1,0 +1,8 @@
+.git
+.runtime-data
+.runtime-http-verify
+cases
+*.db
+*.db-shm
+*.db-wal
+*.log
