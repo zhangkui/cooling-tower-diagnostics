@@ -41,6 +41,14 @@ func IntegrateFlow(sensor string, readings []model.Reading, maxGap time.Duration
 			coverage.GapCount++
 			continue
 		}
+		// A collection gap longer than maxGap means the gateway was offline
+		// between samples; the missing span must not be integrated as if a
+		// steady flow had persisted, otherwise offline periods inflate the
+		// cumulative volume.
+		if interval > maxGap {
+			coverage.GapCount++
+			continue
+		}
 		if previous.Value < 0 || current.Value < 0 {
 			coverage.GapCount++
 			continue
