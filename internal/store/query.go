@@ -11,7 +11,7 @@ import (
 type QueryStore struct{ DB *DB }
 
 func (s QueryStore) ReadingsByRange(ctx context.Context, f model.ReportFilter) ([]model.Reading, error) {
-	q := `SELECT id,tower_id,sensor,value,raw_value,unit,quality,recorded_at FROM readings WHERE tower_id=? AND recorded_at>? AND recorded_at<=? ORDER BY recorded_at`
+	q := `SELECT id,tower_id,sensor,value,raw_value,unit,quality,recorded_at FROM readings WHERE tower_id=? AND recorded_at>=? AND recorded_at<=? ORDER BY recorded_at`
 	rows, err := s.DB.SQL.QueryContext(ctx, q, f.TowerID, f.From.Format(time.RFC3339Nano), f.To.Format(time.RFC3339Nano))
 	if err != nil {
 		return nil, err
