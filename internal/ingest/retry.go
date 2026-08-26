@@ -26,7 +26,12 @@ func Retry(ctx context.Context, p RetryPolicy, fn func(context.Context) error) e
 			delay += time.Duration(rand.Int63n(int64(p.Jitter)))
 		}
 		timer := time.NewTimer(delay)
-		<-timer.C
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
 	}
 	return err
 }
