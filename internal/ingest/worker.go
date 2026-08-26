@@ -3,6 +3,7 @@ package ingest
 import (
 	"context"
 	"cooling-tower-diagnostics/internal/model"
+	"errors"
 	"sync"
 	"time"
 )
@@ -50,12 +51,22 @@ func (p *Pool) Submit(ctx context.Context, r model.ReadingRequest) error {
 }
 func (p *Pool) Stop() { close(p.queue); p.wg.Wait() }
 func Replay(ctx context.Context, frames []model.ReadingRequest, delay time.Duration, submit func(context.Context, model.ReadingRequest) error) error {
-	for _, r := range frames {
+	for i, r := range frames {
+		// Honor cancellation before submitting each frame so a cancel issued
+		// during the inter-frame delay stops playback immediately instead of
+		// committing the next frame.
+		if err := ctx.Err(); err != nil {
+			return errors.Join(model.ErrCanceled, err)
+		}
 		if err := submit(ctx, r); err != nil {
 			return err
 		}
-		if delay > 0 {
-			time.Sleep(delay)
+		// Only the last frame skips the wait; Await is cancellable so an
+		// operator cancel during the delay returns at once.
+		if delay > 0 && i < len(frames)-1 {
+			if err := Await(ctx, delay); err != nil {
+				return errors.Join(model.ErrCanceled, err)
+			}
 		}
 	}
 	return nil
